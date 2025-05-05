@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydroponics Monitoring System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.7/dayjs.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #81C784;
+            --light-color: #E8F5E9;
+            --dark-color: #1B5E20;
+            --danger-color: #F44336;
+            --warning-color: #FFC107;
+            --font-main: system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: var(--light-color);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav li {
+            margin-left: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--light-color);
+        }
+
+        main {
+            padding: 2rem 0;
+            min-height: calc(100vh - 160px);
+        }
+
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e1e1e1;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #D32F2F;
+        }
+
+        /* Landing Page */
+        .plant-selection {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 2rem;
+        }
+
+        .plant-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 300px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .plant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .plant-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .plant-image.water spinach {
+            width: 300px; /* or whatever size you need */
+            height: 200px;
+            background-image: url('../assets/water spinach.png');
+            background-size:cover;
+            background-position: center;
+            border-radius: 8px; /* optional styling */
+        }
+
+
+        .plant-card .sage {
+            width: 300px; /* or whatever size you need */
+            height: 200px;
+            background-image: url('../frontend/assets/sage.png');
+            background-size:cover;
+            background-position: center;
+            border-radius: 8px;
+        }
+
+        .plant-card .chili {
+            width: 300px; /* or whatever size you need */
+            height: 200px;
+            background-image: url('../frontend/assets/chili.png');
+            background-size:cover;
+            background-position: center;
+            border-radius: 8px;
+        }
+
+        .plant-info {
+            padding: 20px;
+            margin-bottom: 5px;
+        }
+
+        .plant-info h3 {
+            margin-bottom: 7px;
+        }
+
+        /* Monitoring Page */
+        .monitoring-container {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .monitoring-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .monitoring-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .monitoring-content {
+            display: none;
+        }
+
+        .monitoring-content.active {
+            display: block;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+        }
+
+        .upload-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+        }
+
+        .data-table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .data-table .photo-thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        /* Charts */
+        .chart-container {
+            margin-bottom: 30px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .plant-selection {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .plant-card {
+                width: 100%;
+                max-width: 350px;
+            }
+            
+            .monitoring-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .monitoring-header .btn {
+                margin-top: 10px;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .data-table {
+                font-size: 0.9rem;
+            }
+            
+            .data-table th, .data-table td {
+                padding: 8px;
+            }
+        }
+        
+        /* Mobile Nav */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 600px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background-color: var(--primary-color);
+                z-index: 1000;
+            }
+            
+            nav ul.show {
+                display: flex;
+            }
+            
+            nav li {
+                margin: 0;
+                text-align: center;
+                padding: 10px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">Hydro<span>Monitor</span></div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            <nav>
+                <ul id="mobileMenu">
+                    <li><a href="#" id="homeLink">Home</a></li>
+                    <li><a href="#" id="dashboardLink">Dashboard</a></li>
+                    <li><a href="#" id="aboutLink">About</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Landing Page -->
+            <div id="landingPage">
+                <h1>Welcome to HydroMonitor</h1>
+                <p>Select a plant to start monitoring your hydroponic system.</p>
+                
+                <div class="plant-selection">
+                    <div class="plant-card" data-plant="water spinach">
+                        <div class="plant-image water spinach"></div>
+                        <div class="plant-info">
+                            <h3>Water spinach</h3>
+                            <p>Monitor your hydroponic water spinach growth with precise tracking of EC, pH, and visual progress.</p>
+                            <button class="btn select-plant-btn">Select Plant</button>
+                        </div>
+                    </div>
+                    
+                    <div class="plant-card" data-plant="sage">
+                        <div class="plant-image sage"></div>
+                        <div class="plant-info">
+                            <h3>Sage</h3>
+                            <p>Track the health and growth of your hydroponic sage plants with our monitoring system.</p>
+                            <button class="btn select-plant-btn">Select Plant</button>
+                        </div>
+                    </div>
+                    
+                    <div class="plant-card" data-plant="chili">
+                        <div class="plant-image chili"></div>
+                        <div class="plant-info">
+                            <h3>Chili</h3>
+                            <p>Optimize your hydroponic chili production by tracking all vital growth parameters.</p>
+                            <button class="btn select-plant-btn">Select Plant</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitoring Page -->
+            <div id="monitoringPage" style="display: none;">
+                <div class="monitoring-container">
+                    <div class="monitoring-header">
+                        <div>
+                            <h2 id="plantTitle">Plant Monitoring</h2>
+                            <p id="plantDescription">Track growth and health parameters</p>
+                        </div>
+                        <button class="btn btn-secondary" id="backToHomeBtn">Change Plant</button>
+                    </div>
+                    
+                    <div class="monitoring-tabs">
+                        <div class="tab active" data-tab="entryForm">Add New Entry</div>
+                        <div class="tab" data-tab="viewData">View Data</div>
+                        <div class="tab" data-tab="analytics">Analytics</div>
+                    </div>
+                    
+                    <div class="monitoring-content active" id="entryForm">
+                        <h3>Add New Monitoring Entry</h3>
+                        <form id="monitoringForm">
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="entryDate">Date</label>
+                                        <input type="date" id="entryDate" required>
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="ecValue">EC Value (μS/cm)</label>
+                                        <input type="number" id="ecValue" step="0.1" min="0" required placeholder="e.g., 1.5">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="phValue">pH Value</label>
+                                        <input type="number" id="phValue" step="0.1" min="0" max="14" required placeholder="e.g., 6.0">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="photoUpload">Plant Photo</label>
+                                <div class="upload-area" id="uploadArea">
+                                    <p>Click to upload or drag and drop an image</p>
+                                    <input type="file" id="photoUpload" accept="image/png, image/jpeg, image/gif" style="display: none;">
+
+                                    <img id="imagePreview" class="upload-preview">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notes">Notes (Optional)</label>
+                                <textarea id="notes" rows="3" placeholder="Any observations or notes about the plant's condition"></textarea>
+                            </div>
+                            
+                            <div class="form-footer">
+                                <button type="submit" class="btn">Save Entry</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="monitoring-content" id="viewData">
+                        <h3>View Monitoring Data</h3>
+                        <div class="form-group">
+                            <label for="filterDate">Filter by Date</label>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <input type="date" id="filterStartDate">
+                                </div>
+                                <div class="form-col">
+                                    <input type="date" id="filterEndDate">
+                                </div>
+                                <div class="form-col">
+                                    <button class="btn" id="applyFilterBtn">Apply Filter</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>EC (μS/cm)</th>
+                                        <th>pH</th>
+                                        <th>Photo</th>
+                                        <th>Notes</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTableBody">
+                                    <!-- Data rows will be inserted here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="noDataMessage" style="display: none;">
+                            <p>No monitoring data available. Start by adding your first entry.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="monitoring-content" id="analytics">
+                        <h3>Analytics</h3>
+                        
+                        <div class="chart-container">
+                            <h4>EC Value Trend</h4>
+                            <canvas id="ecChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <h4>pH Value Trend</h4>
+                            <canvas id="phChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <h4>Summary Statistics</h4>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="stat-card">
+                                        <h5>Average EC</h5>
+                                        <p id="avgEc">-</p>
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="stat-card">
+                                        <h5>Average pH</h5>
+                                        <p id="avgPh">-</p>
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="stat-card">
+                                        <h5>Total Entries</h5>
+                                        <p id="totalEntries">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>2025 HydroMonitor - Hydroponics Monitoring System</p>
+        </div>
+    </footer>
+    <script src="script1.js"></script>
+</body>
+</html>
